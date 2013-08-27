@@ -1,123 +1,67 @@
+require_relative 'chess_pieces.rb'
+
 class Chess
 
-end
+  def initialize
+    @board = Hash.new(" ") #Keyed by location, value = piece obj
 
-class Piece
+    place_white_pieces
+    place_black_pieces
 
-  attr_accessor :location
-  attr_reader :team
-
-  def initialize(team)
-    @team = team
   end
 
-  def get_valid_moves(offsets, options = nil)
+  def print_board
 
-    positions = []
-    offsets.each do |offset|
-      positions << [ (offset[0] + self.location[0].ord).chr,
-                     offset[1] + self.location[1].to_i ]
+    text_board = []
+
+    8.downto(1) do |number|
+      "a".upto("h") do |letter|
+        text_board << @board[letter + number.to_s]
+      end
     end
 
-    positions.select! do |pos|
-      pos[0].between?("a","h") && pos[1].between?(1,8)
+    # text_board.sort do |piece_1, piece_2|
+#       piece_1.location.reverse <=> piece_2.location.reverse
+#     end
+
+
+    8.times do |row|
+      puts text_board[8*row, 8].join(" ")
     end
+  end
 
-    positions.map do |pos|
-      pos[0] + pos[1].to_s
+  def place_white_pieces
+    "a".upto("h") do |x|
+      @board[x+"2"] = Pawn.new(:white, x+"2")
     end
-
-  end
-end
-
-class Pawn < Piece
-  #attr_accessor :first_move
-
-  REGULAR_OFFSETS_BLACK = [
-    [0, -1], [-1, -1], [1, -1]
-  ]
-  FIRST_MOVE_BLACK = [
-    [0, -2]
-  ]
-  REGULAR_OFFSETS_WHITE = [
-    [0, 1], [-1, 1], [1, 1]
-  ]
-  FIRST_MOVE_WHITE = [
-    [0, 2]
-  ]
-
-  def get_valid_moves
-    offsets = []
-    if self.team == :black
-      offsets += REGULAR_OFFSETS_BLACK
-      offsets += FIRST_MOVE_BLACK if self.location[1] == "7"
-    else
-      offsets += REGULAR_OFFSETS_WHITE
-      offsets += FIRST_MOVE_WHITE if self.location[1] == "2"
+    ["a1","h1"].each do |spot|
+      @board[spot] = Rook.new(:white, spot)
     end
-    super(offsets)
+    ["b1","g1"].each do |spot|
+      @board[spot] = Knight.new(:white, spot)
+    end
+    ["c1", "f1"].each do |spot|
+      @board[spot] = Bishop.new(:white, spot)
+    end
+    @board["d1"] = Queen.new(:white, "d1")
+    @board["e1"] = King.new(:white, "e1")
   end
 
-end
-
-class Rook < Piece
-  OFFSETS = Array.new(7) { |i| [0,i+1] } +
-            Array.new(7) { |i| [0,-(i+1)] } +
-            Array.new(7) { |i| [i+1,0] } +
-            Array.new(7) { |i| [-(i+1),0] }
-
-  def get_valid_moves
-    super(OFFSETS)
-  end
-end
-
-class Bishop < Piece
-  OFFSETS = Array.new(7) { |i| [i+1,i+1] } +
-            Array.new(7) { |i| [-(i+1),-(i+1)] } +
-            Array.new(7) { |i| [i+1,-(i+1)] } +
-            Array.new(7) { |i| [-(i+1),i+1] }
-
-  def get_valid_moves
-    super(OFFSETS)
-  end
-end
-
-class Knight < Piece
-  OFFSETS = [
-              [1,2], [1,-2], [-1,2], [-1,-2],
-              [2,1], [2,-1], [-2,1], [-2,-1]
-            ]
-
-  def get_valid_moves
-    super(OFFSETS)
+  def place_black_pieces
+    "a".upto("h") do |x|
+      @board[x+"7"] = Pawn.new(:black, x+"7")
+    end
+    ["a8","h8"].each do |spot|
+      @board[spot] = Rook.new(:black, spot)
+    end
+    ["b8","g8"].each do |spot|
+      @board[spot] = Knight.new(:black, spot)
+    end
+    ["c8", "f8"].each do |spot|
+      @board[spot] = Bishop.new(:black, spot)
+    end
+    @board["d8"] = Queen.new(:black, "d8")
+    @board["e8"] = King.new(:black, "e8")
   end
 
-end
-
-class Queen < Piece
-  OFFSETS = Array.new(7) { |i| [0,i+1] } +
-            Array.new(7) { |i| [0,-(i+1)] } +
-            Array.new(7) { |i| [i+1,0] } +
-            Array.new(7) { |i| [-(i+1),0] } +
-            Array.new(7) { |i| [i+1,i+1] } +
-            Array.new(7) { |i| [-(i+1),-(i+1)] } +
-            Array.new(7) { |i| [i+1,-(i+1)] } +
-            Array.new(7) { |i| [-(i+1),i+1] }
-
-  def get_valid_moves
-    super(OFFSETS)
-  end
-end
-
-class King < Piece
-  OFFSETS = [
-              [1, 0], [1, 1], [1, -1],
-              [0, 1], [0, -1],
-              [-1, 0], [-1, 1], [-1, -1]
-            ]
-
-
-  def get_valid_moves
-    super(OFFSETS)
-  end
 end
