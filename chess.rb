@@ -24,7 +24,7 @@ class Chess
           from, to = player.get_move
           piece = self.board[from]
 
-          piece_color_check(piece, player.team)
+          piece_color_check(from, player.team)
           legal_move_check(piece, to)
           legal_destination_check(piece, to, player.team)
           obstruction_check(piece, to)
@@ -46,9 +46,9 @@ class Chess
 
   end
 
-  def piece_color_check(piece, color)
-    raise ChessError.nopiece(piece.location) if piece == " "
-    raise ChessError.nopiece(piece.location) if piece.team != color
+  def piece_color_check(from, color)
+    raise ChessError.nopiece(from) if self.board[from] == " "
+    raise ChessError.nopiece(from) if self.board[from].team != color
   end
 
   def legal_move_check(piece, to)
