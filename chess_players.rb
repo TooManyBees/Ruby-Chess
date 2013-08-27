@@ -24,10 +24,9 @@ class HumanPlayer < ChessPlayer
       from, to = gets.chomp.split
       raise IOError.new "Enter two coordinates" if to.nil? or from.nil?
       [from, to].each do |coord|
-        raise IOError.new "Coordinate #{coord} out of bounds" unless
-          coord =~ /^[a-h][1-8]$/
+        raise ChessError.moverange(coord) unless coord =~ /^[a-h][1-8]$/
       end
-    rescue IOError => e
+    rescue ChessError => e
       puts e.message
       retry
     end

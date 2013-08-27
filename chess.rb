@@ -29,7 +29,8 @@ class Chess
           legal_destination_check(piece, to, player.team)
           obstruction_check(piece, to)
           # Check check
-        rescue IOError => e
+        rescue ChessError => e
+          # puts "#{piece.class} #{from} is #{e.message}"
           puts e.message
           retry
         end
@@ -46,23 +47,23 @@ class Chess
   end
 
   def piece_color_check(piece, color)
-    raise IOError.new("Piece not found") if piece == " "
-    raise IOError.new("That's not your piece!") if piece.team != color
+    raise ChessError.nopiece(piece.location) if piece == " "
+    raise ChessError.nopiece(piece.location) if piece.team != color
   end
 
   def legal_move_check(piece, to)
     unless piece.get_valid_moves.include? (to)
-      raise IOError.new("That is not a valid move for that piece.")
+      raise ChessError.illegal(piece, to)
     end
   end
 
   def legal_destination_check(piece, to, team)
     if piece.is_a? Pawn
       if self.board[to].is_a? String
-        raise IOError.new("Illegal move for Pawn") unless
+        raise ChessError.illegal(piece) unless
           piece.get_valid_moves(:normal).include?(to)
       else
-        raise IOError.new("Illegal attack move for Pawn") unless
+        raise ChessError.new("Illegal attack move for Pawn #{piece.location}") unless
           piece.get_valid_moves(:attack).include?(to)
       end
     end
@@ -94,7 +95,8 @@ class Chess
           next
         end
         next unless collision_check
-        raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].is_a? String
+        raise ChessError.blocked(piece, spot) unless
+          self.board[spot].is_a? String
       end
     else # is a diagonal
       path = []
@@ -114,7 +116,7 @@ class Chess
       until curr == to || out_of_bounds?(curr)
         curr[0] = (curr[0].ord + dir[0]).chr
         curr[1] = (curr[1].ord + dir[1]).chr
-        raise IOError.new("Move blocked at #{curr}") unless
+        raise ChessError.blocked(piece, curr) unless
           self.board[curr].is_a?(String) or curr == to
       end
 
@@ -159,4 +161,22 @@ class Chess
     @board["e8"] = King.new(:black, "e8")
   end
 
+end
+
+class ChessError < StandardError
+  def self.blocked(piece, to)
+    ChessError.new("#{piece.class} #{piece.location} blocked at #{to}")
+  end
+
+  def self.illegal(piece, to=nil)
+    ChessError.new("Illegal move for #{piece.class} #{piece.location}")
+  end
+
+  def self.moverange(coord)
+    ChessError.new("Coordinate #{coord} out of bounds")
+  end
+
+  def self.nopiece(coord)
+    ChessError.new("You own no piece at #{coord}")
+  end
 end
