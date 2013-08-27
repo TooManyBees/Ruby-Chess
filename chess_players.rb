@@ -36,7 +36,6 @@ class HumanPlayer < ChessPlayer
 
   def print_board(board)
     text_board = []
-
     8.downto(1) do |number|
       "a".upto("h") do |letter|
         coordinate = letter + number.to_s
@@ -50,7 +49,9 @@ class HumanPlayer < ChessPlayer
       end
     end
 
+    puts "  a b c d e f g h"
     8.times do |row|
+      print (8-row).to_s + " "
       puts text_board[8*row, 8].join + "\033[0m"
     end
   end

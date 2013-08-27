@@ -22,9 +22,14 @@ class Chess
 
         begin
           from, to = player.get_move
-
-          # move validity checking: not among valid moves? piece in the way? check? not your piece?
-          piece_color_check(self.board[from], player.team)
+          piece = self.board[from]
+          # move validity checking:
+          # not among valid moves?
+          # piece in the way? check?
+          piece_color_check(piece, player.team)
+          legal_move_check(piece, to)
+          legal_destination_check(piece, to, player.team)
+          obstruction_check(piece, to)
         rescue IOError => e
           # print message from error raised
           puts e.message
@@ -32,7 +37,7 @@ class Chess
         end
         # update board state/game state
         self.board[to] = self.board[from]
-        self.board[from] = " "
+        self.board.delete(from)
 
 
         break unless self.game_state == :in_progress
@@ -43,8 +48,58 @@ class Chess
 
   def piece_color_check(piece, color)
     raise IOError.new("Piece not found") if piece == " "
-
     raise IOError.new("That's not your piece!") if piece.team != color
+  end
+
+  def legal_move_check(piece, to)
+    unless piece.get_valid_moves.include? (to)
+      raise IOError.new("That is not a valid move for that piece.")
+    end
+  end
+
+  def legal_destination_check(piece, to, team)
+    if piece.is_a? Pawn
+      if self.board[to].is_a? String
+        raise IOError.new("Illegal move for Pawn") unless
+          piece.get_valid_moves(:normal).include?(to)
+      else
+        raise IOError.new("Illegal attack move for Pawn") unless
+          piece.get_valid_moves(:attack).include?(to)
+      end
+    end
+
+    return if self.board[to].is_a? String
+    if self.board[to].team == team
+      raise IOError.new("There is a friendly piece in that spot.")
+    end
+  end
+
+  def obstruction_check(piece, to)
+    return if piece.is_a? Knight
+
+    #if not diagonal
+    from = piece.location
+    axis = from[0] == to[0] ? from[0] : from[1]
+    path = board.keys.select { |key| key.include? axis }
+    path << to unless path.include? to
+    path.sort!
+    path.reverse! if to < from
+
+    collision_check = false
+    path.each do |spot|
+      return if collision_check and [from, to].include? spot
+      if [from, to].include? spot
+        collision_check = true
+        next
+      end
+      next unless collision_check
+      raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].is_a? String
+    end
+
+    #else
+
+
+    #end
   end
 
   def place_white_pieces

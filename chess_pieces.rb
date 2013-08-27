@@ -8,7 +8,7 @@ class Piece
     @location = location
   end
 
-  def get_valid_moves(offsets)
+  def get_valid_moves(offsets, option=nil)
 
     positions = []
     offsets.each do |offset|
@@ -29,24 +29,26 @@ end
 
 class Pawn < Piece
   #attr_accessor :first_move
-
-  REGULAR_OFFSETS_BLACK = [
-    [0, -1], [-1, -1], [1, -1]
-  ]
+  ATTACK_OFFSETS_BLACK = [ [-1, -1], [1, -1] ]
+  REGULAR_OFFSETS_BLACK = [ [0, -1] ]
   FIRST_MOVE_BLACK = [ [0, -2] ]
-  REGULAR_OFFSETS_WHITE = [
-    [0, 1], [-1, 1], [1, 1]
-  ]
+
+  ATTACK_OFFSETS_WHITE = [ [-1, 1], [1, 1] ]
+  REGULAR_OFFSETS_WHITE = [ [0, 1] ]
   FIRST_MOVE_WHITE = [ [0, 2] ]
 
-  def get_valid_moves
+  def get_valid_moves(option=nil)
     offsets = []
     if self.team == :black
       offsets += REGULAR_OFFSETS_BLACK
       offsets += FIRST_MOVE_BLACK if self.location[1] == "7"
+      offsets += ATTACK_OFFSETS_BLACK unless option == :normal
+      offsets = ATTACK_OFFSETS_BLACK if option == :attack
     else
       offsets += REGULAR_OFFSETS_WHITE
       offsets += FIRST_MOVE_WHITE if self.location[1] == "2"
+      offsets += ATTACK_OFFSETS_WHITE unless option == :normal
+      offsets = ATTACK_OFFSETS_WHITE if option == :attack
     end
     super(offsets)
   end
