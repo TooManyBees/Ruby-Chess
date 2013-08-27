@@ -23,20 +23,19 @@ class Chess
         begin
           from, to = player.get_move
           piece = self.board[from]
-          # move validity checking:
-          # not among valid moves?
-          # piece in the way? check?
+
           piece_color_check(piece, player.team)
           legal_move_check(piece, to)
           legal_destination_check(piece, to, player.team)
           obstruction_check(piece, to)
+          # Check check
         rescue IOError => e
-          # print message from error raised
           puts e.message
           retry
         end
         # update board state/game state
         self.board[to] = self.board[from]
+        self.board[to].location = to
         self.board.delete(from)
 
 
@@ -76,30 +75,54 @@ class Chess
 
   def obstruction_check(piece, to)
     return if piece.is_a? Knight
+    return if piece.is_a? King
 
-    #if not diagonal
     from = piece.location
-    axis = from[0] == to[0] ? from[0] : from[1]
-    path = board.keys.select { |key| key.include? axis }
-    path << to unless path.include? to
-    path.sort!
-    path.reverse! if to < from
 
-    collision_check = false
-    path.each do |spot|
-      return if collision_check and [from, to].include? spot
-      if [from, to].include? spot
-        collision_check = true
-        next
+    if (from[0] == to[0] or from[1] == to[1]) # not diagonal
+      axis = from[0] == to[0] ? from[0] : from[1]
+      path = board.keys.select { |key| key.include? axis }
+      path << to unless path.include? to
+      path.sort!
+      path.reverse! if to < from
+
+      collision_check = false
+      path.each do |spot|
+        return if collision_check and [from, to].include? spot
+        if [from, to].include? spot
+          collision_check = true
+          next
+        end
+        next unless collision_check
+        raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].is_a? String
       end
-      next unless collision_check
-      raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].is_a? String
+    else # is a diagonal
+      path = []
+      directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+
+      if to[0] < from[0] and to[1] < from[1]
+        dir = directions[0]
+      elsif to[0] < from[0] and to[1] > from[1]
+        dir = directions[1]
+      elsif to[0] > from[0] and to[1] < from[1]
+        dir = directions[2]
+      else
+        dir = directions[3]
+      end
+
+      curr = from.dup
+      until curr == to || out_of_bounds?(curr)
+        curr[0] = (curr[0].ord + dir[0]).chr
+        curr[1] = (curr[1].ord + dir[1]).chr
+        raise IOError.new("Move blocked at #{curr}") unless
+          self.board[curr].is_a?(String) or curr == to
+      end
+
     end
+  end
 
-    #else
-
-
-    #end
+  def out_of_bounds?(coords)
+    !("a".."h").include?(coords[0]) || !("1".."8").include?(coords[1])
   end
 
   def place_white_pieces
