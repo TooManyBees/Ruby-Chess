@@ -2,6 +2,8 @@ require_relative 'chess_pieces.rb'
 
 class Chess
 
+  attr_reader :board
+
   def initialize
     @board = Hash.new(" ") #Keyed by location, value = piece obj
 
@@ -11,22 +13,40 @@ class Chess
   end
 
   def print_board
-
     text_board = []
 
     8.downto(1) do |number|
       "a".upto("h") do |letter|
-        text_board << @board[letter + number.to_s]
+        coordinate = letter + number.to_s
+
+        square = @board[coordinate]
+        string = "\033["
+        string << letter_color(square) << ";"
+        string << background_color(letter, number) << "m"
+        string << square.to_s << " "
+        text_board << string
       end
     end
 
-    # text_board.sort do |piece_1, piece_2|
-#       piece_1.location.reverse <=> piece_2.location.reverse
-#     end
-
-
     8.times do |row|
-      puts text_board[8*row, 8].join(" ")
+      puts text_board[8*row, 8].join + "\033[0m"
+    end
+  end
+
+  def letter_color(piece)
+    return "" if piece.is_a?(String)
+    if piece.team == :white
+      "37;1" # ANSI for white and bold
+    else
+      "30;1" # ANSI for "bold black" (dark gray)
+    end
+  end
+
+  def background_color(letter, number)
+    if (letter.ord - number).even?
+      "40" # ANSI for black background
+    else
+      "43" # ANSI for magenta background (may change)
     end
   end
 
