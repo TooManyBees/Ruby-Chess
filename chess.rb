@@ -1,53 +1,50 @@
 require_relative 'chess_pieces.rb'
+require_relative 'chess_players.rb'
 
 class Chess
 
   attr_reader :board
+  attr_accessor :game_state
 
   def initialize
     @board = Hash.new(" ") #Keyed by location, value = piece obj
-
+    @game_state = :in_progress
+    @players = [HumanPlayer.new(:white), HumanPlayer.new(:black)]
     place_white_pieces
     place_black_pieces
-
   end
 
-  def print_board
-    text_board = []
+  def play
+    # Game loop
+    while self.game_state == :in_progress
+      @players.each do |player|
+        player.print_board(self.board)
 
-    8.downto(1) do |number|
-      "a".upto("h") do |letter|
-        coordinate = letter + number.to_s
+        begin
+          from, to = player.get_move
 
-        square = @board[coordinate]
-        string = "\033["
-        string << letter_color(square) << ";"
-        string << background_color(letter, number) << "m"
-        string << square.to_s << " "
-        text_board << string
+          # move validity checking: not among valid moves? piece in the way? check? not your piece?
+          piece_color_check(self.board[from], player.team)
+        rescue IOError => e
+          # print message from error raised
+          puts e.message
+          retry
+        end
+        # update board state/game state
+        self.board[to] = self.board[from]
+        self.board[from] = " "
+
+
+        break unless self.game_state == :in_progress
       end
     end
 
-    8.times do |row|
-      puts text_board[8*row, 8].join + "\033[0m"
-    end
   end
 
-  def letter_color(piece)
-    return "" if piece.is_a?(String)
-    if piece.team == :white
-      "37;1" # ANSI for white and bold
-    else
-      "30;1" # ANSI for "bold black" (dark gray)
-    end
-  end
+  def piece_color_check(piece, color)
+    raise IOError.new("Piece not found") if piece == " "
 
-  def background_color(letter, number)
-    if (letter.ord - number).even?
-      "40" # ANSI for black background
-    else
-      "43" # ANSI for magenta background (may change)
-    end
+    raise IOError.new("That's not your piece!") if piece.team != color
   end
 
   def place_white_pieces
