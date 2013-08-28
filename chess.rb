@@ -89,33 +89,56 @@ class Chess
     end
 
     return true if threats.length > 1 # can't block double check
+    #only one threat remaining
+    threat_loc = threats[0].location
 
     # check if player can capture threat
     own_pieces = self.board.values.select do |piece|
       piece.class != King && piece.team == team
     end
 
-    own_pieces.each do |piece|
-      begin
-        fake_board = self.board.deep_dup
-        fake_piece = piece.deep_dup
-
-        fake_board.pathing_checks(fake_piece, threats[0].location)
-
-        fake_board.update(threats[0].location, fake_piece.location)
-        next unless fake_board.threats(team).empty?
-
-        return false
-      rescue ChessError => e
-        next
-      end
-    end
+    # own_pieces.each do |piece| # can get rid of this
+#       begin
+#         fake_board = self.board.deep_dup
+#         fake_piece = piece.deep_dup
+#
+#         fake_board.pathing_checks(fake_piece, threat_loc)
+#
+#         fake_board.update(threat_loc, fake_piece.location)
+#         next unless fake_board.threats(team).empty?
+#
+#         return false
+#       rescue ChessError => e
+#         next
+#       end
+#     end
 
     # find path from threat to king
     # Can't block a knight
-    return true if threats[0].class == Knight
+    # return true if threats[0].class == Knight
+    path = self.board.get_path(king.location, threat_loc)
 
+    own_pieces.each do |piece|
+      path.each do |spot|
+        begin
+          next if threats[0].is_a?(Knight) && spot != threat_loc
 
+          # copy board
+          fake_board = self.board.deep_dup
+          fake_piece = piece.deep_dup
+
+          # run path checks to spot
+          fake_board.pathing_checks(fake_piece, spot)
+
+          # run check-check
+          fake_board.update(spot, fake_piece.location)
+          next unless fake_board.threats(team).empty?
+          return false
+        rescue ChessError => e
+          next
+        end
+      end
+    end
 
     # check if player can block path
 
@@ -206,7 +229,7 @@ class Board < Hash
     elsif to[1] > from[1]
       dir[1] = 1
     else
-      dir[0] = 0
+      dir[1] = 0
     end
 
     curr = from.dup
