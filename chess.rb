@@ -20,18 +20,20 @@ class Chess
     # Game loop
     while self.game_state == :in_progress
       @players.each do |player|
-        opponent = (player == :white ? "Black" : "White")
 
+        opponent = (player.team == :white ? "Black" : "White")
         threats = self.board.threats( player.team )
 
         player.print_board(self.board, threats)
 
-        unless threats.empty?
-          if checkmate?(threats, player.team)
-            puts "#{opponent} wins."
-            break
+          if mate?(threats, player.team)
+            if threats.empty?
+              puts "Stalemate."
+            else
+              puts "#{opponent} wins."
+            end
+            return self.game_state
           end
-        end
 
         begin
           from, to = player.get_move
@@ -61,8 +63,8 @@ class Chess
 
   end
 
-  def checkmate?(threats, team)
-    return false if threats.empty?
+  def mate?(threats, team)
+    # return false if threats.empty?
 
     king_arr = self.board.values.select do |piece|
       piece.class == King && piece.team == team
@@ -71,9 +73,13 @@ class Chess
 
     return false if king_can_escape?(king)
     return true if threats.length > 1 # can't block double check
-    return false if pieces_can_save?(king, threats[0])
+    return false if pieces_can_move?(king, threats[0])
 
-    self.game_state = (team == :white ? :black_wins : :white_wins)
+    unless threats.empty?
+      self.game_state = (team == :white ? :black_wins : :white_wins)
+    else
+      self.game_state = :stalemate
+    end
     true
   end
 
@@ -89,20 +95,25 @@ class Chess
         fake_board.update(move, fake_king.location)
         next unless fake_board.threats(king.team).empty?
 
-        return false
+        return true
       rescue ChessError => e
         next
       end
-
     end
+    false
   end
 
-  def pieces_can_save?(king, threat)
+  def pieces_can_move?(king, threat)
     own_pieces = self.board.values.select do |piece|
-      piece.class != King && piece.team == team
+      # piece.class != King && piece.team == king.team
+      piece.team == king.team
     end
 
-    path = self.board.get_path(king.location, threat.location)
+    if king && threat
+      path = self.board.get_path(king.location, threat.location)
+    else
+      path = "a1".upto("h8").select { |el| not "09".include?(el[1]) }
+    end
 
     own_pieces.each do |piece|
       path.each do |spot|
@@ -115,13 +126,14 @@ class Chess
           fake_board.pathing_checks(fake_piece, spot)
 
           fake_board.update(spot, fake_piece.location)
-          next unless fake_board.threats(team).empty?
-          return false
+          next unless fake_board.threats(king.team).empty?
+          return true
         rescue ChessError => e
           next
         end
       end
     end
+    false
   end
 
 end
@@ -265,7 +277,7 @@ class Board < Hash
         coord = x+board_pawns[team]
         self[coord] = Pawn.new(team, coord)
       end
-      board_map.reverse!
+      board_map.reverse! if options[:random]
     end
   end
 
