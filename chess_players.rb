@@ -26,9 +26,9 @@ class HumanPlayer < ChessPlayer
     begin
       puts "#{self}: Please enter your move as two space separated coordinates"
       from, to = gets.chomp.split
-      raise IOError.new "Enter two coordinates" if to.nil? or from.nil?
+      raise ChessError.new("Enter two coordinates") if to.nil? or from.nil?
       [from, to].each do |coord|
-        raise IOError.new "Coordinate #{coord} out of bounds" unless
+        raise ChessError.moverange(coord) unless
           coord =~ /^[a-h][1-8]$/
       end
     rescue IOError => e

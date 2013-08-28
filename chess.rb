@@ -34,11 +34,12 @@ class Chess
 
           fake_board = self.board.deep_dup.update(to, from)
           unless fake_board.threats(player.team).empty?
-            raise IOError.new("That move leaves your king in check!")
+            raise ChessError.check("places") if threats.empty?
+            raise ChessError.check("leaves")
           end
 
           # Check check
-        rescue IOError => e
+        rescue ChessError => e
           puts e.message
           retry
         end
@@ -96,30 +97,30 @@ end
 class Board < Hash
 
   def piece_color_check(piece, color)
-    raise IOError.new("Piece not found") if piece.empty?
-    raise IOError.new("That's not your piece!") if piece.team != color
+    raise ChessError.nopiece if piece.empty?
+    raise ChessError.new("That's not your piece!") if piece.team != color
   end
 
   def legal_move_check(piece, to)
     unless piece.get_valid_moves.include? (to)
-      raise IOError.new("That is not a valid move for that piece.")
+      raise ChessError.illegal(piece)
     end
   end
 
   def legal_destination_check(piece, to, team)
     if piece.is_a? Pawn
       if self[to].empty?
-        raise IOError.new("Illegal move for Pawn") unless
+        raise ChessError.illegal(piece) unless
           piece.get_valid_moves(:normal).include?(to)
       else
-        raise IOError.new("Illegal attack move for Pawn") unless
+        raise ChessError.new("Illegal attack move for Pawn") unless
           piece.get_valid_moves(:attack).include?(to)
       end
     end
 
     return if self[to].empty?
     if self[to].team == team
-      raise IOError.new("There is a friendly piece in that spot.")
+      raise ChessError.blocked(piece, to)
     end
   end
 
@@ -144,7 +145,7 @@ class Board < Hash
           next
         end
         next unless collision_check
-        raise IOError.new("Move blocked at #{spot}.") unless self[spot].empty?
+        raise ChessError.blocked(piece, spot) unless self[spot].empty?
       end
     else # is a diagonal
       path = []
@@ -164,7 +165,7 @@ class Board < Hash
       until curr == to || out_of_bounds?(curr)
         curr[0] = (curr[0].ord + dir[0]).chr
         curr[1] = (curr[1].ord + dir[1]).chr
-        raise IOError.new("Move blocked at #{curr}") unless
+        raise ChessError.blocked(piece, spot) unless
           self[curr].empty? or curr == to
       end
 
@@ -184,12 +185,6 @@ class Board < Hash
       piece.team == opponent
     end
 
-    # king = self.select do |piece|
-#       piece.class == King and piece.team == team
-#     end
-#
-#     king_loc = king.keys[0]
-
     king = self.values.select do |piece|
       piece.class == King and piece.team == team
     end
@@ -204,7 +199,7 @@ class Board < Hash
         self.obstruction_check(piece, king_loc)
         # if it gets here king must be in check?
         threats << piece
-      rescue IOError => e
+      rescue ChessError => e
         next
       end
 
@@ -232,4 +227,26 @@ class Board < Hash
     new_board
   end
 
+end
+
+class ChessError < StandardError
+  def self.blocked(piece, to)
+    ChessError.new("#{piece.class} #{piece.location} blocked at #{to}")
+  end
+
+  def self.illegal(piece, to=nil)
+    ChessError.new("Illegal move for #{piece.class} #{piece.location}")
+  end
+
+  def self.moverange(coord)
+    ChessError.new("Coordinate #{coord} out of bounds")
+  end
+
+  def self.nopiece(coord=nil)
+    ChessError.new("You own no piece #{coord.nil? ? "there" : "at " + coord}")
+  end
+
+  def self.check(verb)
+    ChessError.new("That move #{verb} your king in check!")
+  end
 end
