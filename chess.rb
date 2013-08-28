@@ -18,7 +18,10 @@ class Chess
     # Game loop
     while self.game_state == :in_progress
       @players.each do |player|
-        player.print_board(self.board)
+
+        in_check = in_check?( player.team )
+
+        player.print_board(self.board, in_check)
 
         begin
           from, to = player.get_move
@@ -28,6 +31,11 @@ class Chess
           legal_move_check(piece, to)
           legal_destination_check(piece, to, player.team)
           obstruction_check(piece, to)
+
+          if in_check?(player.team)
+            raise IOError.new("That move leaves your king in check!")
+          end
+
           # Check check
         rescue IOError => e
           puts e.message
@@ -40,9 +48,41 @@ class Chess
         self.board.delete(from)
 
 
+
         break unless self.game_state == :in_progress
       end
     end
+  end
+
+  def in_check?(team)
+    opponent = team == :white ? :black : :white
+
+    opponent_pieces = self.board.values.select do |piece|
+      piece.team == opponent
+    end
+
+    king = self.board.values.select do |piece|
+      piece.class == King and piece.team == team
+    end
+
+    king_loc = king[0].location
+
+    opponent_pieces.each do |piece|
+
+      begin
+        legal_move_check(piece, king_loc)
+        legal_destination_check(piece, king_loc, opponent)
+        obstruction_check(piece, king_loc)
+        # if it gets here king must be in check?
+        return true
+      rescue IOError => e
+        next
+      end
+
+    end
+    # iterated through all opponent pieces, none had legal move
+    # to team's king
+    false
   end
 
   def piece_color_check(piece, color)

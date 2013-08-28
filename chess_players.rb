@@ -38,7 +38,7 @@ class HumanPlayer < ChessPlayer
     [from, to]
   end
 
-  def print_board(board)
+  def print_board(board, in_check)
     text_board = []
     8.downto(1) do |number|
       "a".upto("h") do |letter|
@@ -57,6 +57,10 @@ class HumanPlayer < ChessPlayer
     8.times do |row|
       print (8-row).to_s + " "
       puts text_board[8*row, 8].join + "\033[0m"
+    end
+
+    if in_check
+      puts "You are in check."
     end
   end
 
