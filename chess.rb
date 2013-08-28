@@ -112,6 +112,10 @@ class Chess
     end
 
     # find path from threat to king
+    # Can't block a knight
+    return true if threats[0].class == Knight
+
+
 
     # check if player can block path
 
@@ -185,6 +189,39 @@ class Board < Hash
     end
   end
 
+  def get_straight_path(to, from)
+    axis = from[0] == to[0] ? from[0] : from[1]
+    path = self.keys.select { |key| key.include? axis }
+    path.sort!
+
+    path.shift until [to, from].include? path[0]
+    path.pop until [to,from].include? path[-1]
+    path
+  end
+
+  def get_diagonal_path(to, from)
+    path = [to, from]
+    directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+
+    if to[0] < from[0] and to[1] < from[1]
+      dir = directions[0]
+    elsif to[0] < from[0] and to[1] > from[1]
+      dir = directions[1]
+    elsif to[0] > from[0] and to[1] < from[1]
+      dir = directions[2]
+    else
+      dir = directions[3]
+    end
+
+    curr = from.dup
+    until curr == to || out_of_bounds?(curr)
+      curr[0] = (curr[0].ord + dir[0]).chr
+      curr[1] = (curr[1].ord + dir[1]).chr
+      path << curr
+    end
+    path.sort
+  end
+
   def obstruction_check(piece, to)
     return if piece.is_a? Knight
     return if piece.is_a? King
@@ -192,44 +229,20 @@ class Board < Hash
     from = piece.location
 
     if (from[0] == to[0] or from[1] == to[1]) # not diagonal
-      axis = from[0] == to[0] ? from[0] : from[1]
-      path = self.keys.select { |key| key.include? axis }
-      path << to unless path.include? to
-      path.sort!
+      path = get_straight_path(to, from)
       path.reverse! if to < from
 
-      collision_check = false
       path.each do |spot|
-        return if collision_check and [from, to].include? spot
-        if [from, to].include? spot
-          collision_check = true
-          next
-        end
-        next unless collision_check
+        next if [from, to].include? spot
         raise ChessError.blocked(piece, spot) unless self[spot].empty?
       end
     else # is a diagonal
-      path = []
-      directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+      path = get_diagonal_path(to, from)
 
-      if to[0] < from[0] and to[1] < from[1]
-        dir = directions[0]
-      elsif to[0] < from[0] and to[1] > from[1]
-        dir = directions[1]
-      elsif to[0] > from[0] and to[1] < from[1]
-        dir = directions[2]
-      else
-        dir = directions[3]
+      path.each do |spot|
+        next if [to, from].include? spot
+        raise ChessError.blocked(piece, spot) unless self[spot].empty?
       end
-
-      curr = from.dup
-      until curr == to || out_of_bounds?(curr)
-        curr[0] = (curr[0].ord + dir[0]).chr
-        curr[1] = (curr[1].ord + dir[1]).chr
-        raise ChessError.blocked(piece, spot) unless
-          self[curr].empty? or curr == to
-      end
-
     end
   end
 
