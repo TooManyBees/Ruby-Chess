@@ -14,13 +14,17 @@ class ChessPlayer
 
   end
 
+  def to_s
+    team.to_s.capitalize
+  end
+
 end
 
 class HumanPlayer < ChessPlayer
 
   def get_move
     begin
-      puts "#{self.team.to_s.capitalize}: Please enter your move as two space separated coordinates"
+      puts "#{self}: Please enter your move as two space separated coordinates"
       from, to = gets.chomp.split
       raise IOError.new "Enter two coordinates" if to.nil? or from.nil?
       [from, to].each do |coord|
@@ -58,7 +62,7 @@ class HumanPlayer < ChessPlayer
   private
 
   def letter_color(piece)
-    return "" if piece.is_a?(String)
+    return "" if piece.empty?
     if piece.team == :white
       "37;1" # ANSI for white and bold
     else
