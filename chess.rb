@@ -19,9 +19,9 @@ class Chess
     while self.game_state == :in_progress
       @players.each do |player|
 
-        in_check = self.board.in_check?( player.team )
+        threats = self.board.threats( player.team )
 
-        player.print_board(self.board, in_check)
+        player.print_board(self.board, threats)
 
         begin
           from, to = player.get_move
@@ -33,7 +33,7 @@ class Chess
           self.board.obstruction_check(piece, to)
 
           fake_board = self.board.deep_dup.update(to, from)
-          if fake_board.in_check?(player.team)
+          unless fake_board.threats(player.team).empty?
             raise IOError.new("That move leaves your king in check!")
           end
 
@@ -286,7 +286,9 @@ class Board < Hash
     !("a".."h").include?(coords[0]) || !("1".."8").include?(coords[1])
   end
 
-  def in_check?(team)
+  def threats(team)
+    threats = []
+
     opponent = team == :white ? :black : :white
 
     opponent_pieces = self.values.select do |piece|
@@ -312,7 +314,7 @@ class Board < Hash
         self.legal_destination_check(piece, king_loc, opponent)
         self.obstruction_check(piece, king_loc)
         # if it gets here king must be in check?
-        return true
+        threats << piece
       rescue IOError => e
         next
       end
@@ -320,7 +322,7 @@ class Board < Hash
     end
     # iterated through all opponent pieces, none had legal move
     # to team's king
-    false
+    threats
   end
 
   def update(to, from)

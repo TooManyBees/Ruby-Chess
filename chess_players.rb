@@ -38,7 +38,7 @@ class HumanPlayer < ChessPlayer
     [from, to]
   end
 
-  def print_board(board, in_check)
+  def print_board(board, threats)
     text_board = []
     8.downto(1) do |number|
       "a".upto("h") do |letter|
@@ -59,8 +59,9 @@ class HumanPlayer < ChessPlayer
       puts text_board[8*row, 8].join + "\033[0m"
     end
 
-    if in_check
-      puts "You are in check."
+    unless threats.empty?
+      print "You are in check from "
+      puts threats.map { |piece| "#{piece.class} #{piece.location}" }.join(", ")
     end
   end
 
