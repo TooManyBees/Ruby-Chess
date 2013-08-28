@@ -7,7 +7,7 @@ class Chess
   attr_accessor :game_state
 
   def initialize
-    @board = Hash.new(" ") #Keyed by location, value = piece obj
+    @board = Hash.new( Piece.new(:none) ) #Keyed by location, value = piece obj
     @game_state = :in_progress
     @players = [HumanPlayer.new(:white), HumanPlayer.new(:black)]
     place_white_pieces
@@ -34,6 +34,7 @@ class Chess
           retry
         end
         # update board state/game state
+        # should save which piece got captured, if any, for reference
         self.board[to] = self.board[from]
         self.board[to].location = to
         self.board.delete(from)
@@ -42,11 +43,10 @@ class Chess
         break unless self.game_state == :in_progress
       end
     end
-
   end
 
   def piece_color_check(piece, color)
-    raise IOError.new("Piece not found") if piece == " "
+    raise IOError.new("Piece not found") if piece.empty?
     raise IOError.new("That's not your piece!") if piece.team != color
   end
 
@@ -58,7 +58,7 @@ class Chess
 
   def legal_destination_check(piece, to, team)
     if piece.is_a? Pawn
-      if self.board[to].is_a? String
+      if self.board[to].empty?
         raise IOError.new("Illegal move for Pawn") unless
           piece.get_valid_moves(:normal).include?(to)
       else
@@ -67,7 +67,7 @@ class Chess
       end
     end
 
-    return if self.board[to].is_a? String
+    return if self.board[to].empty?
     if self.board[to].team == team
       raise IOError.new("There is a friendly piece in that spot.")
     end
@@ -94,7 +94,7 @@ class Chess
           next
         end
         next unless collision_check
-        raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].is_a? String
+        raise IOError.new("Move blocked at #{spot}.") unless self.board[spot].empty?
       end
     else # is a diagonal
       path = []
@@ -115,7 +115,7 @@ class Chess
         curr[0] = (curr[0].ord + dir[0]).chr
         curr[1] = (curr[1].ord + dir[1]).chr
         raise IOError.new("Move blocked at #{curr}") unless
-          self.board[curr].is_a?(String) or curr == to
+          self.board[curr].empty? or curr == to
       end
 
     end

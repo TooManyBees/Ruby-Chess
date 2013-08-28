@@ -27,8 +27,13 @@ class Piece
     positions.map do |pos|
       pos[0] + pos[1].to_s
     end
-
   end
+
+  def to_s
+    " "
+  end
+
+  def empty?; true; end
 end
 
 class Pawn < Piece
@@ -60,6 +65,8 @@ class Pawn < Piece
   def to_s
     self.team == :white ? "\u265F" : "\u2659"
   end
+
+  def empty?; false; end
 end
 
 class Rook < Piece
@@ -75,6 +82,8 @@ class Rook < Piece
   def to_s
     self.team == :white ? "\u265C" : "\u2656"
   end
+
+  def empty?; false; end
 end
 
 class Bishop < Piece
@@ -90,6 +99,8 @@ class Bishop < Piece
   def to_s
     self.team == :white ? "\u265D" : "\u2657"
   end
+
+  def empty?; false; end
 end
 
 class Knight < Piece
@@ -105,6 +116,8 @@ class Knight < Piece
   def to_s
     self.team == :white ? "\u265E" : "\u2658"
   end
+
+  def empty?; false; end
 end
 
 class Queen < Piece
@@ -124,6 +137,8 @@ class Queen < Piece
   def to_s
     self.team == :white ? "\u265B" : "\u2655"
   end
+
+  def empty?; false; end
 end
 
 class King < Piece
@@ -140,4 +155,6 @@ class King < Piece
   def to_s
     self.team == :white ? "\u265A" : "\u2654"
   end
+
+  def empty?; false; end
 end
