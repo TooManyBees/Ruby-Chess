@@ -23,14 +23,17 @@ class Chess
 
         player.print_board(self.board, threats)
 
+        if checkmate?(threats, player.team)
+          # do something to notify player
+          break
+        end
+
         begin
           from, to = player.get_move
           piece = self.board[from]
 
           self.board.piece_color_check(piece, player.team)
-          self.board.legal_move_check(piece, to)
-          self.board.legal_destination_check(piece, to, player.team)
-          self.board.obstruction_check(piece, to)
+          self.board.pathing_checks(piece, to)
 
           fake_board = self.board.deep_dup.update(to, from)
           unless fake_board.threats(player.team).empty?
@@ -51,11 +54,47 @@ class Chess
 
         break unless self.game_state == :in_progress
       end
-    end
+    end # while loop
+
+    puts "#{self.game_state}"
+
   end
 
-  def checkmate?
+  def checkmate?(threats, team)
+    return false if threats.empty?
 
+
+    king_arr = self.board.values.select {|piece| piece.class == King && piece.team == team}
+    king = king_arr[0]
+
+    # check if king can escape
+    king_moves = king.get_valid_moves
+
+    king_moves.each do |move|
+      fake_board = self.board.deep_dup
+      fake_king = king.deep_dup # i worry
+      begin
+        # run tests
+        self.board.pathing_checks(king, move)
+
+        next unless fake_board.update(move[0],move[1]).threats(team).empty?
+
+        return false
+      rescue ChessError => e
+        next
+      end
+    end
+
+    return true if threats.length > 1 # can't block double check
+
+    # check if player can capture threat
+
+    # find path from threat to king
+
+    # check if player can block path
+
+    self.game_state = (team == :white ? :black_wins : :white_wins)
+    true
   end
 
   def place_white_pieces
@@ -107,7 +146,7 @@ class Board < Hash
     end
   end
 
-  def legal_destination_check(piece, to, team)
+  def legal_destination_check(piece, to)
     if piece.is_a? Pawn
       if self[to].empty?
         raise ChessError.illegal(piece) unless
@@ -119,7 +158,7 @@ class Board < Hash
     end
 
     return if self[to].empty?
-    if self[to].team == team
+    if self[to].team == piece.team
       raise ChessError.blocked(piece, to)
     end
   end
@@ -176,6 +215,12 @@ class Board < Hash
     !("a".."h").include?(coords[0]) || !("1".."8").include?(coords[1])
   end
 
+  def pathing_checks(piece, location)
+    self.legal_move_check(piece, location)
+    self.legal_destination_check(piece, location)
+    self.obstruction_check(piece, location)
+  end
+
   def threats(team)
     threats = []
 
@@ -194,9 +239,7 @@ class Board < Hash
     opponent_pieces.each do |piece|
 
       begin
-        self.legal_move_check(piece, king_loc)
-        self.legal_destination_check(piece, king_loc, opponent)
-        self.obstruction_check(piece, king_loc)
+        pathing_checks(piece, king_loc)
         # if it gets here king must be in check?
         threats << piece
       rescue ChessError => e
