@@ -56,11 +56,13 @@ class HumanPlayer < ChessPlayer
     puts "  a b c d e f g h"
     8.times do |row|
       print (8-row).to_s + " "
-      puts text_board[8*row, 8].join + "\033[0m"
+      print text_board[8*row, 8].join + "\033[0m"
+      puts " " + (8-row).to_s
     end
+    puts "  a b c d e f g h"
 
     unless threats.empty?
-      print "You are in check from "
+      print "#{self.team.capitalize} is in check from "
       puts threats.map { |piece| "#{piece.class} #{piece.location}" }.join(", ")
     end
   end
@@ -69,18 +71,14 @@ class HumanPlayer < ChessPlayer
 
   def letter_color(piece)
     return "" if piece.empty?
-    if piece.team == :white
-      "37;1" # ANSI for white and bold
-    else
-      "30;1" # ANSI for "bold black" (dark gray)
-    end
+    "30"
   end
 
   def background_color(letter, number)
     if (letter.ord - number).even?
-      "40" # ANSI for black background
+      "43" #ANSI yellow
     else
-      "43" # ANSI for magenta background (may change)
+      "47" #ANSI white
     end
   end
 

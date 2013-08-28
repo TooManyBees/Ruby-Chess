@@ -65,7 +65,7 @@ class Pawn < Piece
   end
 
   def to_s
-    self.team == :white ? "P" : "p"
+    self.team == :white ? "\u2659" : "\u265F"
   end
 
   def empty?; false; end
@@ -82,7 +82,7 @@ class Rook < Piece
   end
 
   def to_s
-    self.team == :white ? "R" : "r"
+    self.team == :white ? "\u2656" : "\u265C"
   end
 
   def empty?; false; end
@@ -99,7 +99,7 @@ class Bishop < Piece
   end
 
   def to_s
-    self.team == :white ? "B" : "b"
+    self.team == :white ? "\u2657" : "\u265D"
   end
 
   def empty?; false; end
@@ -116,7 +116,7 @@ class Knight < Piece
   end
 
   def to_s
-    self.team == :white ? "N" : "n"
+    self.team == :white ? "\u2658" : "\u265E"
   end
 
   def empty?; false; end
@@ -137,7 +137,7 @@ class Queen < Piece
   end
 
   def to_s
-    self.team == :white ? "Q" : "q"
+    self.team == :white ? "\u2655" : "\u265B"
   end
 
   def empty?; false; end
@@ -155,7 +155,7 @@ class King < Piece
   end
 
   def to_s
-    self.team == :white ? "K" : "k"
+    self.team == :white ? "\u2654" : "\u265A"
   end
 
   def empty?; false; end
