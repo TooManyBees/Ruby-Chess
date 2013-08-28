@@ -25,6 +25,12 @@ class Piece
     end
   end
 
+  def deep_dup
+    new_piece = self.class.new(self.team)
+    new_piece.location = self.location.dup
+    new_piece
+  end
+
   def to_s
     " "
   end
