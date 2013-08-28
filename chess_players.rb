@@ -63,7 +63,8 @@ class HumanPlayer < ChessPlayer
     if piece.team == :white
       "37;1" # ANSI for white and bold
     else
-      "30;1" # ANSI for "bold black" (dark gray)
+      "37" # ANSI for white (regular)
+      # "30;1" # ANSI for "bold black" (dark gray)
     end
   end
 

@@ -1,3 +1,7 @@
+# N.B. each piece's to_s method outputs a unicode "black"
+# chess piece for its white version, and vice versa.
+# (As they are rendered in white against a dark background.)
+
 class Piece
 
   attr_accessor :location
@@ -54,7 +58,7 @@ class Pawn < Piece
   end
 
   def to_s
-    self.team == :white ? "P" : "p"
+    self.team == :white ? "\u265F" : "\u2659"
   end
 end
 
@@ -69,7 +73,7 @@ class Rook < Piece
   end
 
   def to_s
-    self.team == :white ? "R" : "r"
+    self.team == :white ? "\u265C" : "\u2656"
   end
 end
 
@@ -84,7 +88,7 @@ class Bishop < Piece
   end
 
   def to_s
-    self.team == :white ? "B" : "b"
+    self.team == :white ? "\u265D" : "\u2657"
   end
 end
 
@@ -99,7 +103,7 @@ class Knight < Piece
   end
 
   def to_s
-    self.team == :white ? "N" : "n"
+    self.team == :white ? "\u265E" : "\u2658"
   end
 end
 
@@ -118,7 +122,7 @@ class Queen < Piece
   end
 
   def to_s
-    self.team == :white ? "Q" : "q"
+    self.team == :white ? "\u265B" : "\u2655"
   end
 end
 
@@ -134,6 +138,6 @@ class King < Piece
   end
 
   def to_s
-    self.team == :white ? "K" : "k"
+    self.team == :white ? "\u265A" : "\u2654"
   end
 end
