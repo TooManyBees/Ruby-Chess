@@ -189,37 +189,33 @@ class Board < Hash
     end
   end
 
-  def get_straight_path(to, from)
-    axis = from[0] == to[0] ? from[0] : from[1]
-    path = self.keys.select { |key| key.include? axis }
-    path.sort!
+  def get_path(to, from)
+    path = [from]
+    dir = Array.new(2)
 
-    path.shift until [to, from].include? path[0]
-    path.pop until [to,from].include? path[-1]
-    path
-  end
-
-  def get_diagonal_path(to, from)
-    path = [to, from]
-    directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-
-    if to[0] < from[0] and to[1] < from[1]
-      dir = directions[0]
-    elsif to[0] < from[0] and to[1] > from[1]
-      dir = directions[1]
-    elsif to[0] > from[0] and to[1] < from[1]
-      dir = directions[2]
+    if to[0] < from[0]
+      dir[0] = -1
+    elsif to[0] > from[0]
+      dir[0] = 1
     else
-      dir = directions[3]
+      dir[0] = 0
+    end
+
+    if to[1] < from [1]
+      dir[1] = -1
+    elsif to[1] > from[1]
+      dir[1] = 1
+    else
+      dir[0] = 0
     end
 
     curr = from.dup
     until curr == to || out_of_bounds?(curr)
       curr[0] = (curr[0].ord + dir[0]).chr
       curr[1] = (curr[1].ord + dir[1]).chr
-      path << curr
+      path << curr.dup
     end
-    path.sort
+    path
   end
 
   def obstruction_check(piece, to)
@@ -228,21 +224,11 @@ class Board < Hash
 
     from = piece.location
 
-    if (from[0] == to[0] or from[1] == to[1]) # not diagonal
-      path = get_straight_path(to, from)
-      path.reverse! if to < from
-
-      path.each do |spot|
-        next if [from, to].include? spot
-        raise ChessError.blocked(piece, spot) unless self[spot].empty?
-      end
-    else # is a diagonal
-      path = get_diagonal_path(to, from)
-
-      path.each do |spot|
-        next if [to, from].include? spot
-        raise ChessError.blocked(piece, spot) unless self[spot].empty?
-      end
+    path = get_path(to, from)
+    # p path
+    path.each do |spot|
+      next if [to, from].include? spot
+      raise ChessError.blocked(piece, spot) unless self[spot].empty?
     end
   end
 
