@@ -64,20 +64,23 @@ class Chess
     return false if threats.empty?
 
 
-    king_arr = self.board.values.select {|piece| piece.class == King && piece.team == team}
+    king_arr = self.board.values.select do |piece|
+      piece.class == King && piece.team == team
+    end
+
     king = king_arr[0]
 
     # check if king can escape
     king_moves = king.get_valid_moves
 
     king_moves.each do |move|
-      fake_board = self.board.deep_dup
-      fake_king = king.deep_dup # i worry
       begin
+        fake_board = self.board.deep_dup
+        fake_king = fake_board[king.location]
         # run tests
         self.board.pathing_checks(king, move)
 
-        next unless fake_board.update(move[0],move[1]).threats(team).empty?
+        next unless fake_board.update(move, fake_king.location).threats(team).empty?
 
         return false
       rescue ChessError => e
@@ -88,6 +91,25 @@ class Chess
     return true if threats.length > 1 # can't block double check
 
     # check if player can capture threat
+    own_pieces = self.board.values.select do |piece|
+      piece.class != King && piece.team == team
+    end
+
+    own_pieces.each do |piece|
+      begin
+        fake_board = self.board.deep_dup
+        fake_piece = piece.deep_dup
+
+        fake_board.pathing_checks(fake_piece, threats[0].location)
+
+        fake_board.update(threats[0].location, fake_piece.location)
+        next unless fake_board.threats(team).empty?
+
+        return false
+      rescue ChessError => e
+        next
+      end
+    end
 
     # find path from threat to king
 
