@@ -10,21 +10,24 @@ class Chess
     @board = Board.new( Piece.new(:none) ) #Keyed by location, value = piece obj
     @game_state = :in_progress
     @players = [HumanPlayer.new(:white), HumanPlayer.new(:black)]
-    place_white_pieces
-    place_black_pieces
+
+    # @board.place_white_pieces
+#     @board.place_black_pieces
+    @board.place_pieces
   end
 
   def play
     # Game loop
     while self.game_state == :in_progress
       @players.each do |player|
+        opponent = (player == :white ? "Black" : "White")
 
         threats = self.board.threats( player.team )
 
         player.print_board(self.board, threats)
 
         if checkmate?(threats, player.team)
-          # do something to notify player
+          puts "#{opponent} wins."
           break
         end
 
@@ -50,29 +53,30 @@ class Chess
         # should save which piece got captured, if any, for reference
         @board = fake_board
 
-
-
         break unless self.game_state == :in_progress
       end
     end # while loop
-
-    puts "#{self.game_state}"
 
   end
 
   def checkmate?(threats, team)
     return false if threats.empty?
 
-
     king_arr = self.board.values.select do |piece|
       piece.class == King && piece.team == team
     end
-
     king = king_arr[0]
 
-    # check if king can escape
-    king_moves = king.get_valid_moves
+    return false if king_can_escape?(king)
+    return true if threats.length > 1 # can't block double check
+    return false if pieces_can_save?(king, threats[0])
 
+    self.game_state = (team == :white ? :black_wins : :white_wins)
+    true
+  end
+
+  def king_can_escape?(king)
+    king_moves = king.get_valid_moves
     king_moves.each do |move|
       begin
         fake_board = self.board.deep_dup
@@ -80,57 +84,34 @@ class Chess
         # run tests
         self.board.pathing_checks(king, move)
 
-        next unless fake_board.update(move, fake_king.location).threats(team).empty?
+        fake_board.update(move, fake_king.location)
+        next unless fake_board.threats(king.team).empty?
 
         return false
       rescue ChessError => e
         next
       end
+
     end
+  end
 
-    return true if threats.length > 1 # can't block double check
-    #only one threat remaining
-    threat_loc = threats[0].location
-
-    # check if player can capture threat
+  def pieces_can_save?(king, threat)
     own_pieces = self.board.values.select do |piece|
       piece.class != King && piece.team == team
     end
 
-    # own_pieces.each do |piece| # can get rid of this
-#       begin
-#         fake_board = self.board.deep_dup
-#         fake_piece = piece.deep_dup
-#
-#         fake_board.pathing_checks(fake_piece, threat_loc)
-#
-#         fake_board.update(threat_loc, fake_piece.location)
-#         next unless fake_board.threats(team).empty?
-#
-#         return false
-#       rescue ChessError => e
-#         next
-#       end
-#     end
-
-    # find path from threat to king
-    # Can't block a knight
-    # return true if threats[0].class == Knight
-    path = self.board.get_path(king.location, threat_loc)
+    path = self.board.get_path(king.location, threat.location)
 
     own_pieces.each do |piece|
       path.each do |spot|
         begin
-          next if threats[0].is_a?(Knight) && spot != threat_loc
+          # Can't block a knight
+          next if threat.is_a?(Knight) && spot != threat_loc
 
-          # copy board
           fake_board = self.board.deep_dup
           fake_piece = piece.deep_dup
-
-          # run path checks to spot
           fake_board.pathing_checks(fake_piece, spot)
 
-          # run check-check
           fake_board.update(spot, fake_piece.location)
           next unless fake_board.threats(team).empty?
           return false
@@ -139,45 +120,6 @@ class Chess
         end
       end
     end
-
-    # check if player can block path
-
-    self.game_state = (team == :white ? :black_wins : :white_wins)
-    true
-  end
-
-  def place_white_pieces
-    "a".upto("h") do |x|
-      @board[x+"2"] = Pawn.new(:white, x+"2")
-    end
-    ["a1","h1"].each do |spot|
-      @board[spot] = Rook.new(:white, spot)
-    end
-    ["b1","g1"].each do |spot|
-      @board[spot] = Knight.new(:white, spot)
-    end
-    ["c1", "f1"].each do |spot|
-      @board[spot] = Bishop.new(:white, spot)
-    end
-    @board["d1"] = Queen.new(:white, "d1")
-    @board["e1"] = King.new(:white, "e1")
-  end
-
-  def place_black_pieces
-    "a".upto("h") do |x|
-      @board[x+"7"] = Pawn.new(:black, x+"7")
-    end
-    ["a8","h8"].each do |spot|
-      @board[spot] = Rook.new(:black, spot)
-    end
-    ["b8","g8"].each do |spot|
-      @board[spot] = Knight.new(:black, spot)
-    end
-    ["c8", "f8"].each do |spot|
-      @board[spot] = Bishop.new(:black, spot)
-    end
-    @board["d8"] = Queen.new(:black, "d8")
-    @board["e8"] = King.new(:black, "e8")
   end
 
 end
@@ -187,6 +129,12 @@ class Board < Hash
   def piece_color_check(piece, color)
     raise ChessError.nopiece if piece.empty?
     raise ChessError.new("That's not your piece!") if piece.team != color
+  end
+
+  def pathing_checks(piece, location)
+    self.legal_move_check(piece, location)
+    self.legal_destination_check(piece, location)
+    self.obstruction_check(piece, location)
   end
 
   def legal_move_check(piece, to)
@@ -212,35 +160,6 @@ class Board < Hash
     end
   end
 
-  def get_path(to, from)
-    path = [from]
-    dir = Array.new(2)
-
-    if to[0] < from[0]
-      dir[0] = -1
-    elsif to[0] > from[0]
-      dir[0] = 1
-    else
-      dir[0] = 0
-    end
-
-    if to[1] < from [1]
-      dir[1] = -1
-    elsif to[1] > from[1]
-      dir[1] = 1
-    else
-      dir[1] = 0
-    end
-
-    curr = from.dup
-    until curr == to || out_of_bounds?(curr)
-      curr[0] = (curr[0].ord + dir[0]).chr
-      curr[1] = (curr[1].ord + dir[1]).chr
-      path << curr.dup
-    end
-    path
-  end
-
   def obstruction_check(piece, to)
     return if piece.is_a? Knight
     return if piece.is_a? King
@@ -255,19 +174,33 @@ class Board < Hash
     end
   end
 
+  def get_path(to, from)
+    path = [from]
+    dir = Array.new(2) { 0 }
+
+    0.upto(1) do |i|
+      if to[i] < from[i]
+        dir[i] = -1
+      elsif to[i] > from[i]
+        dir[i] = 1
+      end
+    end
+
+    curr = from.dup
+    until curr == to || out_of_bounds?(curr)
+      curr[0] = (curr[0].ord + dir[0]).chr
+      curr[1] = (curr[1].ord + dir[1]).chr
+      path << curr.dup
+    end
+    path
+  end
+
   def out_of_bounds?(coords)
     !("a".."h").include?(coords[0]) || !("1".."8").include?(coords[1])
   end
 
-  def pathing_checks(piece, location)
-    self.legal_move_check(piece, location)
-    self.legal_destination_check(piece, location)
-    self.obstruction_check(piece, location)
-  end
-
   def threats(team)
     threats = []
-
     opponent = team == :white ? :black : :white
 
     opponent_pieces = self.values.select do |piece|
@@ -279,7 +212,6 @@ class Board < Hash
     end
 
     king_loc = king[0].location
-
     opponent_pieces.each do |piece|
 
       begin
@@ -314,6 +246,32 @@ class Board < Hash
     new_board
   end
 
+  def place_pieces
+    board_teams = { black: "8", white: "1"}
+    board_pawns = { black: "7", white: "2"}
+
+    board_map = {
+      Rook => ["a","h"],
+      Knight => ["b","g"],
+      Bishop => ["c", "f"],
+      Queen => ["d"],
+      King => ["e"],
+    }
+
+    board_teams.each do |team, number|
+      board_map.each do |type, letters|
+        letters.each do |letter|
+          coord = letter+number
+          self[coord] = type.new(team, coord)
+        end
+      end
+      "a".upto("h") do |x|
+        coord = x+board_pawns[team]
+        self[coord] = Pawn.new(team, coord)
+      end
+    end
+  end
+
 end
 
 class ChessError < StandardError
@@ -337,3 +295,6 @@ class ChessError < StandardError
     ChessError.new("That move #{verb} your king in check!")
   end
 end
+
+c = Chess.new
+c.play
