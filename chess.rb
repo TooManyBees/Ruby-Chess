@@ -6,14 +6,14 @@ class Chess
   attr_reader :board
   attr_accessor :game_state
 
-  def initialize
+  def initialize(options = {})
     @board = Board.new( Piece.new(:none) ) #Keyed by location, value = piece obj
     @game_state = :in_progress
     @players = [HumanPlayer.new(:white), HumanPlayer.new(:black)]
 
     # @board.place_white_pieces
 #     @board.place_black_pieces
-    @board.place_pieces
+    @board.place_pieces(options)
   end
 
   def play
@@ -26,9 +26,11 @@ class Chess
 
         player.print_board(self.board, threats)
 
-        if checkmate?(threats, player.team)
-          puts "#{opponent} wins."
-          break
+        unless threats.empty?
+          if checkmate?(threats, player.team)
+            puts "#{opponent} wins."
+            break
+          end
         end
 
         begin
@@ -236,9 +238,7 @@ class Board < Hash
   end
 
   def deep_dup
-
     new_board = Board.new( self.default )
-
     self.each do |coord, piece|
       new_board[coord.dup] = piece.deep_dup
     end
@@ -246,32 +246,50 @@ class Board < Hash
     new_board
   end
 
-  def place_pieces
+  def place_pieces(options = {})
     board_teams = { black: "8", white: "1"}
     board_pawns = { black: "7", white: "2"}
 
-    board_map = {
-      Rook => ["a","h"],
-      Knight => ["b","g"],
-      Bishop => ["c", "f"],
-      Queen => ["d"],
-      King => ["e"],
-    }
+    p options
+    board_map = [ Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook ]
+
+    chess960(board_map) if options[:random]
 
     board_teams.each do |team, number|
-      board_map.each do |type, letters|
-        letters.each do |letter|
-          coord = letter+number
-          self[coord] = type.new(team, coord)
-        end
+      board_map.each_with_index do |type, letter_i|
+        letter = (letter_i + 97).chr
+        coord = letter+number
+        self[coord] = type.new(team, coord)
       end
       "a".upto("h") do |x|
         coord = x+board_pawns[team]
         self[coord] = Pawn.new(team, coord)
       end
+      board_map.reverse!
     end
   end
 
+  # Methods for Chess 960 randomized positions
+  def chess960(board_map)
+    loop do
+      board_map.shuffle!
+      break if bishops_opposite?(board_map) && king_between_rooks?(board_map)
+    end
+  end
+
+  def bishops_opposite?(board_map)
+    first_bishop_index = board_map.index(Bishop)
+    second_bishop_index = board_map.rindex(Bishop)
+
+    first_bishop_index.even? ^ second_bishop_index.even?
+  end
+
+  def king_between_rooks?(board_map)
+    first_rook_index = board_map.index(Rook)
+    second_rook_index = board_map.rindex(Rook)
+
+    board_map[first_rook_index..second_rook_index].include?(King)
+  end
 end
 
 class ChessError < StandardError
@@ -296,5 +314,8 @@ class ChessError < StandardError
   end
 end
 
-c = Chess.new
-c.play
+
+if __FILE__ == $PROGRAM_NAME
+  c = Chess.new
+  c.play
+end
