@@ -59,6 +59,8 @@ class Board < Hash
       end
     end
 
+    # dir is now a vector pointing in the direction the piece wants to move
+
     curr = from.dup
     until curr == to || out_of_bounds?(curr)
       curr[0] = (curr[0].ord + dir[0]).chr
@@ -80,13 +82,12 @@ class Board < Hash
       piece.team == opponent
     end
 
-    king = self.values.select do |piece|
+    king = self.values.find do |piece|
       piece.class == King and piece.team == team
     end
+    king_loc = king.location
 
-    king_loc = king[0].location
     opponent_pieces.each do |piece|
-
       begin
         pathing_checks(piece, king_loc)
         # if it gets here king must be in check?
@@ -94,8 +95,8 @@ class Board < Hash
       rescue ChessError => e
         next
       end
-
     end
+
     # iterated through all opponent pieces, none had legal move
     # to team's king
     threats

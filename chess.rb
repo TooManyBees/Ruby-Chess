@@ -19,6 +19,7 @@ class Chess
   def play
     # Game loop
     puts "Enter moves as two space-separated coordinates (i.e. 'b2 b4')"
+
     while self.game_state == :in_progress
       @players.each do |player|
 
@@ -65,12 +66,12 @@ class Chess
   end
 
   def mate?(threats, team)
-    # return false if threats.empty?
+    # Can't just return false if threats is empty because there might
+    # be a stalemate.
 
-    king_arr = self.board.values.select do |piece|
+    king = self.board.values.find do |piece|
       piece.class == King && piece.team == team
     end
-    king = king_arr[0]
 
     return false if king_can_escape?(king)
     return true if threats.length > 1 # can't block double check
