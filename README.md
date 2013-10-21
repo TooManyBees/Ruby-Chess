@@ -1,2 +1,3 @@
-w2d2-chess
-==========
+# Chess
+
+A command line game of chess, written in Ruby.

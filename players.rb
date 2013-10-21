@@ -24,7 +24,7 @@ class HumanPlayer < ChessPlayer
 
   def get_move
     begin
-      puts "#{self}: Please enter your move as two space separated coordinates"
+      print "#{self}'s move: "
       from, to = gets.chomp.split
       raise ChessError.new("Enter two coordinates") if to.nil? or from.nil?
       [from, to].each do |coord|

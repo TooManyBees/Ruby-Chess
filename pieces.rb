@@ -39,7 +39,6 @@ class Piece
 end
 
 class Pawn < Piece
-  #attr_accessor :first_move
   ATTACK_OFFSETS_BLACK = [ [-1, -1], [1, -1] ]
   REGULAR_OFFSETS_BLACK = [ [0, -1] ]
   FIRST_MOVE_BLACK = [ [0, -2] ]
