@@ -140,6 +140,7 @@ class Chess
 end
 
 if __FILE__ == $PROGRAM_NAME
-  c = Chess.new
+  # Only variant right now is random (chess960)
+  c = Chess.new(ARGV.pop.to_sym => true)
   c.play
 end

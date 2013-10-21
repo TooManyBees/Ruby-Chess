@@ -123,7 +123,7 @@ class Board < Hash
 
     board_map = [ Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook ]
 
-    chess960(board_map) if options[:random]
+    chess960(board_map) if options[:random] || options[:chess960]
 
     board_teams.each do |team, number|
       board_map.each_with_index do |type, letter_i|
