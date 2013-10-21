@@ -135,7 +135,6 @@ class Board < Hash
         coord = x+board_pawns[team]
         self[coord] = Pawn.new(team, coord)
       end
-      board_map.reverse! if options[:random]
     end
   end
 
