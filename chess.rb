@@ -141,6 +141,7 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   # Only variant right now is random (chess960)
-  c = Chess.new(ARGV.pop.to_sym => true)
+  option = ARGV.pop || ""
+  c = Chess.new(option.to_sym => true)
   c.play
 end
