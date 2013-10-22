@@ -20,3 +20,10 @@ Exceptions are raised and rescued to control valid movements.
 To determine check, the same validations are performed to see if each of the opponent's pieces can make a valid move against the player's King.
 
 To determine checkmate, the board is duplicated and the next turn is simulated on the fake board. If no exceptions are raised, there is a valid move that can either move the King out of check, block the threatening piece, or capture the threatening piece. Since the Board class keeps track of all the threats against a player's King, we know how many threats exist. If a King is in check from two pieces, the only possible escape is moving the king, which reduces the amount of simulations the game has to run.
+
+There is no AI player currently, but one can be made as long as it inherits from Player and implements the get_move method.
+
+## To Do
+
+* Allow input in [algebraic notation](https://en.wikipedia.org/wiki/Algebraic_chess_notation), wherein only the piece type and destination is given, and the piece's starting location is inferred.
+* Write a basic AI player
